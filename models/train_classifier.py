@@ -1,25 +1,77 @@
+from sqlalchemy import create_engine
+import pandas as pd
+import pickle
+import re
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('wordnet')
+
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.corpus import stopwords
+from nltk.stem.wordnet import WordNetLemmatizer
+
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.multioutput import MultiOutputClassifier
 import sys
 
 
 def load_data(database_filepath):
-    pass
-
+    database_filepath = 'sqlite:///'+ database_filepath
+    engine = create_engine(database_filepath)
+    #read table
+    df = pd.read_sql_table('disasterResponseTbl', con = engine) 
+    X = df.message.values
+    Y = df.drop(['id','message','original','genre'], axis = 1).values
+    categories = df.drop(['id','message','original','genre'], axis = 1)
+    return X, Y, categories
 
 def tokenize(text):
-    pass
+    '''convert text into to word tokens, lemmatize and remove stopwords'''
+    # normalize case and remove punctuation
+    text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
+    # tokenize text
+    tokens = word_tokenize(text)
+    # lemmatize and remove stop words
+    tokens = [lemmatizer.lemmatize(word) for word in tokens if word not in stop_words]
+    return tokens
 
 
 def build_model():
-    pass
+    #build the model pipeline
+    pipeline = Pipeline([
+            ('vect', CountVectorizer(tokenizer=tokenize)),
+            ('tfidf', TfidfTransformer()),
+            ('clf', MultiOutputClassifier(RandomForestClassifier()))
+        ])
+
+    #hyperparameters tuning with GridSearch
+    parameters = {
+        'clf__estimator__n_estimators': [10, 15, 20],
+        'clf__estimator__min_samples_split': [2, 3, 4]
+
+    }
+    model = GridSearchCV(pipeline, param_grid=parameters)
+    return model
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
+    y_pred = model.predict(X_test)
 
+    #print the precision, recall and f1-score of each categories
+    for i in range(36):
+        print(category_names[i])
+        print(classification_report(Y_test[:,i],y_pred[:,i]))
 
 def save_model(model, model_filepath):
-    pass
+    pickle.dump(model, open(model_filepath, 'wb'))
 
+stop_words = stopwords.words('english')
+lemmatizer = WordNetLemmatizer()
 
 def main():
     if len(sys.argv) == 3:
