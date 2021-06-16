@@ -1,6 +1,7 @@
 import json
 import plotly
 import pandas as pd
+import joblib
 
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
@@ -8,9 +9,19 @@ from nltk.tokenize import word_tokenize
 from flask import Flask
 from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
-from sklearn.externals import joblib
+# from sklearn.externals import joblib
 from sqlalchemy import create_engine
 
+from PIL import Image
+# Import package
+import matplotlib.pyplot as plt
+
+# Import package
+from wordcloud import WordCloud, STOPWORDS
+
+# Import packages
+import wikipedia
+import re
 
 app = Flask(__name__)
 
@@ -26,23 +37,34 @@ def tokenize(text):
     return clean_tokens
 
 # load data
-engine = create_engine('sqlite:///../data/YourDatabaseName.db')
-df = pd.read_sql_table('YourTableName', engine)
+engine = create_engine('sqlite:///data/DisasterResponse.db')
+df = pd.read_sql_table('disasterResponseTbl', engine)
 
 # load model
-model = joblib.load("../models/your_model_name.pkl")
+model = joblib.load("./models/model.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
 @app.route('/index')
 def index():
-    
+    text = ' '.join(df['message'])
+    stopwords = set(STOPWORDS)
+    wc = WordCloud(background_color="black",
+                    stopwords = stopwords)
+        
+    # wc.generate(text)
+    wc.generate(text)
+    wc.to_file("wordcloud.png")
+
+    filename = Image.open("wordcloud.png")
+    filename.show()
+
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
