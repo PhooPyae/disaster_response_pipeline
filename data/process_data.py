@@ -34,12 +34,14 @@ def clean_data(df):
     df = df.drop_duplicates()
     # check number of duplicates
     print(df.duplicated().sum())
+
+    df = df.drop(df[df.related == 2].index)
     return df
 
 def save_data(df, database_filename):
     database_filename = 'sqlite:///'+database_filename
     engine = create_engine(database_filename)
-    df.to_sql('disasterResponseTbl', engine, index=False)
+    df.to_sql('disasterResponseTbl', engine, index = False, if_exists = 'replace')
 
 def main():
     if len(sys.argv) == 4:

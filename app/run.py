@@ -41,7 +41,7 @@ engine = create_engine('sqlite:///data/DisasterResponse.db')
 df = pd.read_sql_table('disasterResponseTbl', engine)
 
 # load model
-model = joblib.load("./models/model.pkl")
+model = joblib.load("./models/classifier.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
@@ -65,9 +65,31 @@ def index():
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
 
+    category_names = df.iloc[:,4:].columns
+    category_count = (df.iloc[:,4:] != 0).sum().values
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
+        {
+            'data': [
+                Bar(
+                    x=category_names,
+                    y=category_count
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message Categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category",
+                    'tickangle': 35
+                }
+            }
+        },
         {
             'data': [
                 Bar(
@@ -85,7 +107,8 @@ def index():
                     'title': "Genre"
                 }
             }
-        }
+        },
+    
     ]
     
     # encode plotly graphs in JSON
