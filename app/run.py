@@ -50,7 +50,7 @@ model = joblib.load("./models/model.pkl")
 def index():
     text = ' '.join(df['message'])
     stopwords = set(STOPWORDS)
-    wc = WordCloud(background_color="black",
+    wc = WordCloud(background_color="black", height = 500, width = 1000,
                     stopwords = stopwords)
         
     # wc.generate(text)
